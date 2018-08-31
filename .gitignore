@@ -1,6 +1,9 @@
 # Prerequisites
 *.d
 
+# Swap
+*.swp
+
 # Object files
 *.o
 *.ko
