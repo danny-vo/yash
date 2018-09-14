@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <stdio.h>
 
 #include "Command.h"
 
@@ -19,9 +20,12 @@ void destroyCommand(Command command) {
 void setCommandProgram(Command* command, char* program) {
   int progLen = 0;
   while (program[progLen] != '\0') {
-    ++progLen;
+    progLen++;
   }
-  char* prog = (char*)calloc((sizeof(char)*progLen)+1, *program);
+  char* prog = (char*)calloc(progLen+1, sizeof(char));
+  for (int i=0; i<=progLen; ++i) {
+    prog[i] = program[i];
+  }
   command->program = prog;
   return;
 }

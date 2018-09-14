@@ -21,14 +21,15 @@ Command parseCommand(char* str) {
   // Parse out the command and its arguments
   char* token;
   int tokenCount = 0;
-  token = strtok(str, "");
+  token = strtok(str, " ");
   while(token != NULL) {
-    if (tokenCount = 0) {
+    if (0 == tokenCount) {
       setCommandProgram(&command, token);
     } else {
       pushCommandArg(&command, token);
     }
     token = strtok(NULL, " ");
+    tokenCount++;
   }
 
   return command;

@@ -12,7 +12,9 @@ int main() {
   char** parseCmd;
   
   while (inString = readline("yash> ")) {
-    char** parseCmd = parseString(inString);
+    Command command = parseCommand(inString);
+    printf("Command: %s\n", command.program);
+    destroyCommand(command);
   }
 
   return 0;
