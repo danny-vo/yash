@@ -5,7 +5,7 @@
 #include <readline/history.h>
 
 
-#include "parseTools.h"
+#include "ParseTools.h"
 
 int main() {
   char* inString;
