@@ -11,10 +11,15 @@
 void forkExecvp(char* cmdProg, char** cmdArgs) {
   pid_t pid = fork();
 
+  // Child executes the program
   if (0 == pid) {
     execvp(cmdProg, cmdArgs);
+  // Error
   } else if (-1 == pid) {
     perror("fork() error\n");
+  // Blocking until child finishes
+  } else {
+    wait((int*)NULL);
   }
 
 }
@@ -22,7 +27,7 @@ void forkExecvp(char* cmdProg, char** cmdArgs) {
 int main(int argc, char* argv[]) {
   char* inString;
   
-  while (inString = readline("yash> ")) {
+  while (inString = readline("# ")) {
     Command command = parseCommand(inString);
     forkExecvp(command.program, (command.arguments)->data);
     destroyCommand(command);
