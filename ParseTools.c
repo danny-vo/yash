@@ -22,8 +22,11 @@ Command parseCommand(char* str) {
   int tokenCount = 0;
   token = strtok(str, " ");
   while(token != NULL) {
+    // This is the program name
     if (0 == tokenCount) {
       setCommandProgram(&command, token);
+      pushCommandArg(&command, token);
+    // This is the arg list
     } else {
       pushCommandArg(&command, token);
     }
@@ -31,5 +34,7 @@ Command parseCommand(char* str) {
     tokenCount++;
   }
 
+  // exec functions expect the arg list to be null terminated
+  strVecPushBack(command.arguments, NULL);
   return command;
 }

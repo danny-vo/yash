@@ -31,7 +31,6 @@ void setCommandProgram(Command* command, char* program) {
 void pushCommandArg(Command* command, char* arg) {
   strVecPushBack(command->arguments, arg);
   command->argLen++;
-  strVecPrint(*command->arguments);
 }
 
 void printCommand(Command command) {

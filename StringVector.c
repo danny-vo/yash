@@ -19,6 +19,7 @@ StringVector createStrVec(uint32_t initVectorSize) {
 
 void destroyStrVec(StringVector strVec) {
   for (int i=0; i < strVec.length; ++i) {
+    if (NULL == strVec.data[i]) { continue; }
     free(strVec.data[i]);
   }
   free(strVec.data);
@@ -61,17 +62,26 @@ void strVecPushBack(StringVector* strVec, char* str) {
   }
 
   // Allocates the str argument on the heap
-  int strLen = strlen(str)+1;
-  char* heapStr = (char*)malloc((strLen+1)*sizeof(char));
-  strcpy(heapStr, str);
+  if (NULL == str) {
+    strVec->data[strVec->length] = NULL;
+  } else {
+    int strLen = strlen(str)+1;
+    char* heapStr = (char*)malloc((strLen+1)*sizeof(char));
+    strcpy(heapStr, str);
+    strVec->data[strVec->length] = heapStr;
+  }
 
-  strVec->data[strVec->length] = heapStr;
   strVec->length++;
 }
 
 void strVecPrint(StringVector strVec) {
   printf("Vector length: %d\n", strVec.length);
   for (int i=0; i < strVec.length; ++i) {
-    printf("%s\n", strVec.data[i]);
+    if (NULL == strVec.data[i]) {
+      printf("%s\n", "NULLPTR");
+    }
+    else {
+      printf("%s\n", strVec.data[i]);
+    }
   }
 }
