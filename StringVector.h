@@ -17,5 +17,6 @@ void setStrVecElem(StringVector, uint32_t idx, char* str);
 uint32_t strVecSize(StringVector strVec);
 void strVecPopBack(StringVector strVec);
 void strVecPushBack(StringVector* strVec, char* str);
+void strVecPrint(StringVector);
 
 #endif /* STRINGVECTOR_H */

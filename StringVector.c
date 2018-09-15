@@ -1,4 +1,6 @@
 #include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
 
 #include "StringVector.h"
 
@@ -47,6 +49,7 @@ void strVecPopBack(StringVector strVec) {
 }
 
 void strVecPushBack(StringVector* strVec, char* str) {
+  // Determine if we need to resize the vector
   if (strVec->length == strVec->capacity) {
     strVec->capacity *= 2;
     char** newData = (char**)calloc(strVec->capacity, sizeof(char*));
@@ -56,6 +59,19 @@ void strVecPushBack(StringVector* strVec, char* str) {
     free(strVec->data);
     strVec->data = newData;
   }
-  strVec->data[strVec->length] = str;
+
+  // Allocates the str argument on the heap
+  int strLen = strlen(str)+1;
+  char* heapStr = (char*)malloc((strLen+1)*sizeof(char));
+  strcpy(heapStr, str);
+
+  strVec->data[strVec->length] = heapStr;
   strVec->length++;
+}
+
+void strVecPrint(StringVector strVec) {
+  printf("Vector length: %d\n", strVec.length);
+  for (int i=0; i < strVec.length; ++i) {
+    printf("%s\n", strVec.data[i]);
+  }
 }

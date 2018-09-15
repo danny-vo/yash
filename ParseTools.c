@@ -9,7 +9,6 @@ char** parseString(char* str) {
   token = strtok(str, " ");
 
   while (token != NULL) {
-    printf(" %s\n", token);
     token = strtok(NULL, " ");
   }
 }

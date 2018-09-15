@@ -7,13 +7,12 @@
 
 #include "ParseTools.h"
 
-int main() {
+int main(int argc, char* argv[]) {
   char* inString;
-  char** parseCmd;
   
   while (inString = readline("yash> ")) {
     Command command = parseCommand(inString);
-    printf("Command: %s\n", command.program);
+    printCommand(command);
     destroyCommand(command);
   }
 

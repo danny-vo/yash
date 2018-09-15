@@ -21,5 +21,8 @@ $(PROGRAM): $(OBJS)
 test: $(PROGRAM)
 	./$(PROGRAM)
 
+valgrind: $(PROGRAM)
+	valgrind --leak-check=yes ./$(PROGRAM)
+
 clean:
 	-rm -f $(OBJS) $(PROGRAM)

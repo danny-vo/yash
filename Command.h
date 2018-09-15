@@ -31,5 +31,6 @@ Command createCommand(void);
 void destroyCommand(Command command);
 void setCommandProgram(Command* command, char* program);
 void pushCommandArg(Command* command, char* arg);
+void printCommand(Command command);
 
 #endif /* COMMAND_H */
