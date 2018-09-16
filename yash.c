@@ -38,14 +38,14 @@ int redirectInput(char* inTarget) {
 
 int main(int argc, char* argv[]) {
   /* Assign signal handlers */
-  signal(SIGINT, sigintHandler);
+  //signal(SIGINT, sigintHandler);
   signal(SIGTSTP, sigtstpHandler);
   signal(SIGCHLD, sigchldHandler);
   
   char* inString;
   while (inString = readline("# ")) {
     Command command = parseCommand(inString);
-    forkExecvp(command.program, (command.arguments)->data);
+    forkExecvp(command.program, (char**)(command.arguments)->data);
     destroyCommand(command);
   }
 

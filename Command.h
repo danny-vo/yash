@@ -1,11 +1,11 @@
 #ifndef _COMMAND_H
 #define _COMMAND_H
 
-#include "StringVector.h"
+#include "Vector.h"
 
 typedef struct Command {
   char* program;
-  StringVector* arguments;
+  Vector* arguments;
   int argLen;
 } Command;
 

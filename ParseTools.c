@@ -36,6 +36,6 @@ Command parseCommand(char* str) {
   }
 
   // exec functions expect the arg list to be null terminated
-  strVecPushBack(command.arguments, NULL);
+  Vector_push(command.arguments, NULL);
   return command;
 }

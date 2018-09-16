@@ -4,11 +4,11 @@
 
 #include "Vector.h"
 
-#define MINIMUM_SIZE 0
+#define MINIMUM_SIZE 4
 
 Vector* Vector_new(uint32_t initSize, void (*deletor)(void*), void (*printer)(void)) {
   Vector* vector = (Vector*)malloc(sizeof(Vector));
-  vector->length = initSize;
+  vector->length = 0;
   vector->capacity = initSize < MINIMUM_SIZE ? MINIMUM_SIZE : initSize;
   vector->data = (void**)calloc(vector->capacity, sizeof(void*));
   vector->deletor = deletor ? deletor : free;
@@ -26,7 +26,7 @@ void Vector_destroy(Vector* vector) {
 }
 
 void* Vector_getElem(Vector* vector, uint32_t idx) {
-  return idx >= vector->length ? NULL : vector->data[idx];
+  return idx > vector->length ? NULL : vector->data[idx];
 }
 
 int Vector_setElem(Vector* vector, uint32_t idx, void* elem) {
@@ -52,12 +52,12 @@ void* Vector_pop(Vector* vector) {
 void Vector_push(Vector* vector, void* elem) {
   if (vector->length >= vector->capacity) {
     vector->capacity *= 2;
-    void** newData = (char**)calloc(vector->capacity, sizeof(void*));
+    void** newData = (void**)calloc(vector->capacity, sizeof(void*));
     for (uint32_t i=0; i < vector->length; ++i) {
       newData[i] = vector->data[i];
     }
     free(vector->data);
     vector->data = newData;
   }
-  vector->data[++(vector->length)] = elem;
+  vector->data[(vector->length)++] = elem;
 }
