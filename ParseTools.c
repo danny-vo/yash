@@ -30,6 +30,7 @@ Command parseCommand(char* str) {
     } else {
       pushCommandArg(&command, token);
     }
+
     token = strtok(NULL, " ");
     tokenCount++;
   }

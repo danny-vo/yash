@@ -5,8 +5,10 @@
 #include <unistd.h>
 #include <readline/readline.h>
 #include <readline/history.h>
+#include <signal.h>
 
 #include "ParseTools.h"
+#include "SignalHandlers.h"
 
 void forkExecvp(char* cmdProg, char** cmdArgs) {
   pid_t pid = fork();
@@ -24,9 +26,23 @@ void forkExecvp(char* cmdProg, char** cmdArgs) {
 
 }
 
+int redirectOutput(char* outTarget) {
+  int fd = open(outTarget, "w");
+  return fd;
+}
+
+int redirectInput(char* inTarget) {
+  int fd = open(inTarget, "r");
+  return fd;
+}
+
 int main(int argc, char* argv[]) {
-  char* inString;
+  /* Assign signal handlers */
+  signal(SIGINT, sigintHandler);
+  signal(SIGTSTP, sigtstpHandler);
+  signal(SIGCHLD, sigchldHandler);
   
+  char* inString;
   while (inString = readline("# ")) {
     Command command = parseCommand(inString);
     forkExecvp(command.program, (command.arguments)->data);
