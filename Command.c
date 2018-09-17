@@ -43,6 +43,10 @@ void Command_pushArg(Command* cmd, char* arg) {
   cmd->argLen++;
 }
 
+char** Command_getArgs(Command* cmd) {
+  return (char**)cmd->arguments->data;
+}
+
 void Command_print(Command cmd) {
   printf("################### Command ##################\n");
   printf("### Program: %s\n", cmd.program);

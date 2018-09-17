@@ -28,15 +28,36 @@ Vector* Parse_tokens(char* str) {
   return tokens;
 }
 
+void Parse_setRedirection(Vector* tokens, uint32_t* tokPos, Command* cmd) {
+  char* token = Vector_getElem(tokens, *tokPos);
+
+  // Change stdin
+  if (!strcmp(token, "<")) {
+    char* file = Vector_getElem(tokens, ++(*tokPos));
+    cmd->fdTable.stdIn = malloc(sizeof(char)*strlen(file));
+    strcpy(cmd->fdTable.stdIn, file);
+  // Change stdout
+  } else if (!strcmp(token, ">")) {
+    char* file = Vector_getElem(tokens, ++(*tokPos));
+    cmd->fdTable.stdOut = malloc(sizeof(char)*strlen(file));
+    strcpy(cmd->fdTable.stdOut, file);
+  // Change stderr
+  } else if (!strcmp(token, "2>")){
+    char* file = Vector_getElem(tokens, ++(*tokPos));
+    cmd->fdTable.stdErr = malloc(sizeof(char)*strlen(file));
+    strcpy(cmd->fdTable.stdErr, file);
+  }
+
+  return;
+}
+
 Command* Parse_directive(Vector* tokens, uint32_t* tokPos) {
-  // Allocates the Command struct
   Command* cmd = Command_new();
-  
   char* token = Vector_getElem(tokens, *tokPos);
   int tokenCount = 0;
+
   // Parse out the cmd and its arguments
-  while(*tokPos < Vector_size(tokens) && (strcmp(token, "<"))
-        && strcmp(token, ">") && strcmp(token, "2>") && strcmp(token, "|")) {
+  while(*tokPos < Vector_size(tokens) && strcmp(token, "|")) {
 
     // This is the program name
     if (0 == tokenCount) {
@@ -44,7 +65,12 @@ Command* Parse_directive(Vector* tokens, uint32_t* tokPos) {
       Command_pushArg(cmd, token);
     // This is the arg list
     } else {
-      Command_pushArg(cmd, token);
+      // Handle redirections
+      if(!(strcmp(token, "<")) || !strcmp(token, ">") || !strcmp(token, "2>")) {
+        Parse_setRedirection(tokens, tokPos, cmd);
+      } else {
+        Command_pushArg(cmd, token);
+      }
     }
     
     token = Vector_getElem(tokens, ++(*tokPos));
@@ -62,14 +88,8 @@ Vector* Parse_commands(char* str) {
   uint32_t tokPos = 0;
   
   while (tokPos < Vector_size(tokens)) {
-    // Handle redirecting stdin/stdout/stderr
-    if (!strcmp(Vector_getElem(tokens, tokPos), "<")
-        || !strcmp(Vector_getElem(tokens, tokPos),">")
-        || !strcmp(Vector_getElem(tokens, tokPos),"2>")) {
-      
-
-    // Handle piping
-    } else if (!strcmp(Vector_getElem(tokens, tokPos), "|")) {
+    // Piping
+    if (!strcmp(Vector_getElem(tokens, tokPos), "|")) {
 
     // Exectuables
     } else {

@@ -39,5 +39,6 @@ void Command_destroy(Command* cmd);
 void Command_setProgram(Command* cmd, char* program);
 void Command_pushArg(Command* cmd, char* arg);
 void Command_print(Command cmd);
+char** Command_getArgs(Command* cmd);
 
 #endif /* COMMAND_H */
