@@ -2,11 +2,15 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <unistd.h>
+#include <fcntl.h>
 #include <readline/readline.h>
 #include <readline/history.h>
 #include <signal.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <unistd.h>
 
+#include "Command.h"
 #include "ParseTools.h"
 #include "SignalHandlers.h"
 
@@ -26,6 +30,7 @@ void forkExecvp(char* cmdProg, char** cmdArgs) {
 
 }
 
+#if 0
 int redirectOutput(char* outTarget) {
   int fd = open(outTarget, "w");
   return fd;
@@ -34,6 +39,13 @@ int redirectOutput(char* outTarget) {
 int redirectInput(char* inTarget) {
   int fd = open(inTarget, "r");
   return fd;
+}
+#endif
+
+void Yash_commandHandler(Command* cmd) {
+  if (EXECUTABLE == cmd->type) {
+    forkExecvp(cmd->program, (char**)(cmd->arguments)->data);
+  }
 }
 
 int main(int argc, char* argv[]) {
@@ -44,9 +56,13 @@ int main(int argc, char* argv[]) {
   
   char* inString;
   while (inString = readline("# ")) {
-    Command command = parseCommand(inString);
-    forkExecvp(command.program, (char**)(command.arguments)->data);
-    destroyCommand(command);
+    Vector* commands = Parse_commands(inString);
+    while (Vector_size(commands) > 0) {
+      Command* cmd = Vector_pop(commands);
+      Yash_commandHandler(cmd);
+      Command_destroy(cmd);
+    }
+    Vector_destroy(commands);
   }
 
   return 0;

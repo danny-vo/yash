@@ -46,7 +46,7 @@ void** Vector_getData(Vector* vector) {
 }
 
 void* Vector_pop(Vector* vector) {
-  return vector->length <=0 ? NULL : vector->data[vector->length--];
+  return vector->length <=0 ? NULL : vector->data[--(vector->length)];
 }
 
 void Vector_push(Vector* vector, void* elem) {

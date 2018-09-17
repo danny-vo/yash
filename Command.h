@@ -3,10 +3,17 @@
 
 #include "Vector.h"
 
+typedef enum CommandType {
+  EXECUTABLE,
+  REDIRECTION,
+  PIPE
+} TYPE;
+
 typedef struct Command {
   char* program;
   Vector* arguments;
   int argLen;
+  TYPE type;
 } Command;
 
 /*
@@ -19,7 +26,7 @@ typedef struct Command {
  *
  * returns: An initalized Command struct
  */
-Command createCommand(void);
+Command* Command_new(void);
 
 /*
  * Function:  destroyCommand
@@ -28,10 +35,10 @@ Command createCommand(void);
  *    program (char*), arguments (StringVector*)
  * returns: none
  */
-void destroyCommand(Command command);
-
-void setCommandProgram(Command* command, char* program);
-void pushCommandArg(Command* command, char* arg);
-void printCommand(Command command);
+void Command_destroy(Command* command);
+void Command_setProgram(Command* command, char* program);
+void Command_setType(Command* command, TYPE type);
+void Command_pushArg(Command* command, char* arg);
+void Command_print(Command command);
 
 #endif /* COMMAND_H */

@@ -4,7 +4,7 @@
 #include "Command.h"
 
 char** parseString(char* str);
-Command parseCommand(char* str);
+Vector* Parse_commands(char* str);
 void destroyCommand(Command);
 
 #endif /* PARSETOOLS_H */

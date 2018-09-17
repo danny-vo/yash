@@ -3,6 +3,7 @@
 #include <string.h>
 
 #include "ParseTools.h"
+#include "Vector.h"
 
 char** parseString(char* str) {
   char* token;
@@ -13,29 +14,75 @@ char** parseString(char* str) {
   }
 }
 
-Command parseCommand(char* str) {
-  // Allocates the Command struct
-  Command command = createCommand();
+Vector* Parse_tokens(char* str) {
+  Vector* tokens = Vector_new(0, NULL, NULL);
+  char* tok = strtok(str, " ");
 
-  // Parse out the command and its arguments
-  char* token;
+  while (NULL != tok) {
+    char* tokPtr = (char*)malloc(sizeof(char)*strlen(tok));
+    strcpy(tokPtr, tok);
+    Vector_push(tokens, tokPtr);
+    tok = strtok(NULL, " ");
+  }
+
+  return tokens;
+}
+
+Command* Parse_directive(Vector* tokens, uint32_t* tokPos) {
+  // Allocates the Command struct
+  Command* cmd = Command_new();
+  
+  char* token = Vector_getElem(tokens, *tokPos);
   int tokenCount = 0;
-  token = strtok(str, " ");
-  while(token != NULL) {
+  // Parse out the cmd and its arguments
+  while(*tokPos < Vector_size(tokens) && (strcmp(token, "<"))
+        && strcmp(token, ">") && strcmp(token, "2>") && strcmp(token, "|")) {
+
     // This is the program name
     if (0 == tokenCount) {
-      setCommandProgram(&command, token);
-      pushCommandArg(&command, token);
+      Command_setProgram(cmd, token);
+      Command_pushArg(cmd, token);
     // This is the arg list
     } else {
-      pushCommandArg(&command, token);
+      Command_pushArg(cmd, token);
     }
-
-    token = strtok(NULL, " ");
+    
+    token = Vector_getElem(tokens, ++(*tokPos));
     tokenCount++;
   }
 
   // exec functions expect the arg list to be null terminated
-  Vector_push(command.arguments, NULL);
-  return command;
+  Vector_push(cmd->arguments, NULL);
+  return cmd;
+}
+
+Vector* Parse_commands(char* str) {
+  Vector* commands = Vector_new(0, (void (*)(void*))&Command_destroy, NULL);
+  Vector* tokens = Parse_tokens(str);
+  uint32_t tokPos = 0;
+  
+  while (tokPos < Vector_size(tokens)) {
+    // Handle redirecting standard input
+    if (!strcmp(Vector_getElem(tokens, tokPos), "<")) {
+
+    // Handle redirecting standard output
+    } else if (!strcmp(Vector_getElem(tokens, tokPos), ">"))  {
+
+    // Handle redirecting standard error
+    } else if (!strcmp(Vector_getElem(tokens, tokPos), "2>")) {
+
+    // Handle piping
+    } else if (!strcmp(Vector_getElem(tokens, tokPos), "|")) {
+
+    // Exectuables
+    } else {
+      Command* exeCmd = Parse_directive(tokens, &tokPos);
+      Command_setType(exeCmd, EXECUTABLE);
+      Vector_push(commands, exeCmd);
+    }
+
+  }
+
+  Vector_destroy(tokens);
+  return commands;
 }
