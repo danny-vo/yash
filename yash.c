@@ -14,29 +14,36 @@
 #include "ParseTools.h"
 #include "SignalHandlers.h"
 
-int Yash_openFd(char* file) {
-  int fd = open(file, O_CREAT|O_RDWR|O_TRUNC, 0644);
-  return fd;
-}
-
 void Yash_redirect(Command* cmd) {
   /* Redirect stdin */
   if (cmd->fdTable.stdIn) {
-    int ifd = Yash_openFd(cmd->fdTable.stdIn);
+    int ifd = open(
+      cmd->fdTable.stdIn,
+      O_RDONLY,
+      S_IRGRP| S_IROTH | S_IRUSR | S_IWUSR
+    );
     dup2(ifd, STDIN_FILENO);
     close(ifd);
   }
 
   /* Redirect stdout */
   if (cmd->fdTable.stdOut) {
-    int ofd = Yash_openFd(cmd->fdTable.stdOut);
+    int ofd = open(
+      cmd->fdTable.stdOut,
+      O_CREAT | O_WRONLY,
+      S_IRGRP | S_IROTH | S_IRUSR | S_IWUSR
+    );
     dup2(ofd, STDOUT_FILENO);
     close(ofd);
   }
 
   /* Redirect stderr */
   if (cmd->fdTable.stdErr) {
-    int efd = Yash_openFd(cmd->fdTable.stdErr);
+    int efd = open(
+      cmd->fdTable.stdErr,
+      O_CREAT | O_WRONLY,
+      S_IRGRP | S_IROTH | S_IRUSR | S_IWUSR
+    );
     dup2(efd, STDERR_FILENO);
     close(efd);
   }
