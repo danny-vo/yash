@@ -77,7 +77,7 @@ int Yash_forkPipes(Command* cmd) {
   if (0 == pid0) {
     close(pipeFd[0]);
     dup2(pipeFd[1], STDOUT_FILENO);
-    printf("Executing bitch 0\n");
+    Yash_redirect(cmd->pipe[0]);
     execvp(cmd->pipe[0]->program, Command_getArgs(cmd->pipe[0]));
   } else if (pid0 < 0) {
     perror("fork() error\n");
@@ -87,7 +87,7 @@ int Yash_forkPipes(Command* cmd) {
   if (0 == pid1) {
     close(pipeFd[1]);
     dup2(pipeFd[0], STDIN_FILENO);
-    printf("Executing bitch 1\n");
+    Yash_redirect(cmd->pipe[1]);
     execvp(cmd->pipe[1]->program, Command_getArgs(cmd->pipe[1]));
   } else if (pid1 < 0) {
     perror("fork() error\n");
