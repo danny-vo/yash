@@ -62,14 +62,11 @@ Vector* Parse_commands(char* str) {
   uint32_t tokPos = 0;
   
   while (tokPos < Vector_size(tokens)) {
-    // Handle redirecting standard input
-    if (!strcmp(Vector_getElem(tokens, tokPos), "<")) {
-
-    // Handle redirecting standard output
-    } else if (!strcmp(Vector_getElem(tokens, tokPos), ">"))  {
-
-    // Handle redirecting standard error
-    } else if (!strcmp(Vector_getElem(tokens, tokPos), "2>")) {
+    // Handle redirecting stdin/stdout/stderr
+    if (!strcmp(Vector_getElem(tokens, tokPos), "<")
+        || !strcmp(Vector_getElem(tokens, tokPos),">")
+        || !strcmp(Vector_getElem(tokens, tokPos),"2>")) {
+      
 
     // Handle piping
     } else if (!strcmp(Vector_getElem(tokens, tokPos), "|")) {
@@ -77,7 +74,6 @@ Vector* Parse_commands(char* str) {
     // Exectuables
     } else {
       Command* exeCmd = Parse_directive(tokens, &tokPos);
-      Command_setType(exeCmd, EXECUTABLE);
       Vector_push(commands, exeCmd);
     }
 

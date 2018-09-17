@@ -3,17 +3,17 @@
 
 #include "Vector.h"
 
-typedef enum CommandType {
-  EXECUTABLE,
-  REDIRECTION,
-  PIPE
-} TYPE;
+typedef struct FileDescriptorTable {
+  char* stdIn;
+  char* stdOut;
+  char* stdErr;
+} FileDescriptorTable;
 
 typedef struct Command {
   char* program;
   Vector* arguments;
   int argLen;
-  TYPE type;
+  FileDescriptorTable fdTable;
 } Command;
 
 /*
@@ -35,10 +35,9 @@ Command* Command_new(void);
  *    program (char*), arguments (StringVector*)
  * returns: none
  */
-void Command_destroy(Command* command);
-void Command_setProgram(Command* command, char* program);
-void Command_setType(Command* command, TYPE type);
-void Command_pushArg(Command* command, char* arg);
-void Command_print(Command command);
+void Command_destroy(Command* cmd);
+void Command_setProgram(Command* cmd, char* program);
+void Command_pushArg(Command* cmd, char* arg);
+void Command_print(Command cmd);
 
 #endif /* COMMAND_H */

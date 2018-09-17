@@ -43,9 +43,7 @@ int redirectInput(char* inTarget) {
 #endif
 
 void Yash_commandHandler(Command* cmd) {
-  if (EXECUTABLE == cmd->type) {
-    forkExecvp(cmd->program, (char**)(cmd->arguments)->data);
-  }
+  forkExecvp(cmd->program, (char**)(cmd->arguments)->data);
 }
 
 int main(int argc, char* argv[]) {

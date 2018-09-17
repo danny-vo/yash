@@ -5,43 +5,47 @@
 #include "Command.h"
 #include "Vector.h"
 
+
 Command* Command_new(void) {
-  Command* command = (Command*)calloc(1, sizeof(Command));
-  command->program = (char*)calloc(sizeof(char*), 0);
-  command->arguments = (Vector*)malloc(sizeof(Vector));
-  command->arguments = Vector_new(2, NULL, NULL);
-  command->argLen = 0;
-  return command;
+  Command* cmd = (Command*)calloc(1, sizeof(Command));
+  cmd->program = NULL;
+  cmd->arguments = (Vector*)malloc(sizeof(Vector));
+  cmd->arguments = Vector_new(2, NULL, NULL);
+  cmd->argLen = 0;
+  return cmd;
 }
 
-void Command_destroy(Command* command) {
-  free(command->program);
-  Vector_destroy(command->arguments);
-  free(command);
+void destroyFdTable(FileDescriptorTable* fdTable) {
+  if (fdTable->stdIn) free(fdTable->stdIn);
+  if (fdTable->stdOut) free(fdTable->stdOut);
+  if (fdTable->stdErr) free(fdTable->stdErr);
+  return;
+}
+void Command_destroy(Command* cmd) {
+  if (NULL != cmd->program) free(cmd->program);
+  destroyFdTable(&(cmd->fdTable));
+  Vector_destroy(cmd->arguments);
+  free(cmd);
 }
 
-void Command_setProgram(Command* command, char* program) {
+void Command_setProgram(Command* cmd, char* program) {
   int progLen = strlen(program)+1;
   char* prog = (char*)malloc((progLen+1)*sizeof(char));
   strcpy(prog, program);
-  command->program = prog;
+  cmd->program = prog;
   return;
 }
 
-void Command_setType(Command* command, TYPE type) {
-  command->type = type;
-}
-
-void Command_pushArg(Command* command, char* arg) {
+void Command_pushArg(Command* cmd, char* arg) {
   char* argPtr = (char*)malloc(sizeof(char)*strlen(arg));
   strcpy(argPtr, arg);
-  Vector_push(command->arguments, argPtr);
-  command->argLen++;
+  Vector_push(cmd->arguments, argPtr);
+  cmd->argLen++;
 }
 
-void Command_print(Command command) {
+void Command_print(Command cmd) {
   printf("################### Command ##################\n");
-  printf("### Program: %s\n", command.program);
+  printf("### Program: %s\n", cmd.program);
   printf("### Arguments:\n");
-  printf("### ArgLen: %d\n", command.argLen);
+  printf("### ArgLen: %d\n", cmd.argLen);
 }
