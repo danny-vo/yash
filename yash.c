@@ -95,9 +95,8 @@ int Yash_forkPipes(Command* cmd) {
 
   close(pipeFd[0]);
   close(pipeFd[1]);
-  wait((int*) NULL);
-  wait((int*) NULL);
-
+  waitpid(pid0, NULL, 0);
+  waitpid(pid1, NULL, 0);
   return 0;
 }
 
