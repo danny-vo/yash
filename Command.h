@@ -9,11 +9,19 @@ typedef struct FileDescriptorTable {
   char* stdErr;
 } FileDescriptorTable;
 
+typedef enum CommandType {
+  UNDEFINED,
+  EXECUTABLE,
+  PIPE
+} TYPE;
+
 typedef struct Command {
   char* program;
   Vector* arguments;
   int argLen;
   FileDescriptorTable fdTable;
+  struct Command* pipe[2];
+  TYPE type;
 } Command;
 
 /*

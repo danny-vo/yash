@@ -23,6 +23,10 @@ void destroyFdTable(FileDescriptorTable* fdTable) {
 }
 void Command_destroy(Command* cmd) {
   if (NULL != cmd->program) free(cmd->program);
+  if (PIPE == cmd->type) {
+    Command_destroy(cmd->pipe[0]);
+    Command_destroy(cmd->pipe[1]);
+  }
   destroyFdTable(&(cmd->fdTable));
   Vector_destroy(cmd->arguments);
   free(cmd);

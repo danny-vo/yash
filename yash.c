@@ -63,9 +63,42 @@ void Yash_executeCommand(Command* cmd) {
     perror("fork() error\n");
   // Blocking until child finishes
   } else {
-    wait((int*)NULL);
+    wait((int*) NULL);
   }
 
+  close(pid);
+}
+
+int Yash_forkPipes(Command* cmd) {
+  int pipeFd[2];
+  pipe(pipeFd);
+
+  pid_t pid0 = fork();
+  if (0 == pid0) {
+    close(pipeFd[0]);
+    dup2(pipeFd[1], STDOUT_FILENO);
+    printf("Executing bitch 0\n");
+    execvp(cmd->pipe[0]->program, Command_getArgs(cmd->pipe[0]));
+  } else if (pid0 < 0) {
+    perror("fork() error\n");
+  }
+  
+  pid_t pid1 = fork();
+  if (0 == pid1) {
+    close(pipeFd[1]);
+    dup2(pipeFd[0], STDIN_FILENO);
+    printf("Executing bitch 1\n");
+    execvp(cmd->pipe[1]->program, Command_getArgs(cmd->pipe[1]));
+  } else if (pid1 < 0) {
+    perror("fork() error\n");
+  }
+
+  close(pipeFd[0]);
+  close(pipeFd[1]);
+  wait((int*) NULL);
+  wait((int*) NULL);
+
+  return 0;
 }
 
 int main(int argc, char* argv[]) {
@@ -77,13 +110,21 @@ int main(int argc, char* argv[]) {
   char* inString;
   while (inString = readline("# ")) {
     Vector* commands = Parse_commands(inString);
+
     while (Vector_size(commands) > 0) {
       Command* cmd = Vector_pop(commands);
-      Yash_executeCommand(cmd);
+
+      if (PIPE == cmd->type) {
+        Yash_forkPipes(cmd);
+      } else {
+        Yash_executeCommand(cmd);
+      }
       Command_destroy(cmd);
     }
+
     Vector_destroy(commands);
   }
 
   return 0;
+
 }

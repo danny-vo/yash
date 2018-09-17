@@ -31,17 +31,17 @@ Vector* Parse_tokens(char* str) {
 void Parse_setRedirection(Vector* tokens, uint32_t* tokPos, Command* cmd) {
   char* token = Vector_getElem(tokens, *tokPos);
 
-  // Change stdin
+  /* Change stdin */
   if (!strcmp(token, "<")) {
     char* file = Vector_getElem(tokens, ++(*tokPos));
     cmd->fdTable.stdIn = malloc(sizeof(char)*strlen(file));
     strcpy(cmd->fdTable.stdIn, file);
-  // Change stdout
+  /* Change stdout */
   } else if (!strcmp(token, ">")) {
     char* file = Vector_getElem(tokens, ++(*tokPos));
     cmd->fdTable.stdOut = malloc(sizeof(char)*strlen(file));
     strcpy(cmd->fdTable.stdOut, file);
-  // Change stderr
+  /* Change stderr */
   } else if (!strcmp(token, "2>")){
     char* file = Vector_getElem(tokens, ++(*tokPos));
     cmd->fdTable.stdErr = malloc(sizeof(char)*strlen(file));
@@ -56,16 +56,16 @@ Command* Parse_directive(Vector* tokens, uint32_t* tokPos) {
   char* token = Vector_getElem(tokens, *tokPos);
   int tokenCount = 0;
 
-  // Parse out the cmd and its arguments
+  /* Parse out the cmd and its arguments */
   while(*tokPos < Vector_size(tokens) && strcmp(token, "|")) {
 
-    // This is the program name
+    /* Name of executable */
     if (0 == tokenCount) {
       Command_setProgram(cmd, token);
       Command_pushArg(cmd, token);
-    // This is the arg list
+    /* Argument list */
     } else {
-      // Handle redirections
+      /* Handle redirection */
       if(!(strcmp(token, "<")) || !strcmp(token, ">") || !strcmp(token, "2>")) {
         Parse_setRedirection(tokens, tokPos, cmd);
       } else {
@@ -77,9 +77,20 @@ Command* Parse_directive(Vector* tokens, uint32_t* tokPos) {
     tokenCount++;
   }
 
-  // exec functions expect the arg list to be null terminated
+  /* exec functions expect the arg list to be null terminated */
   Vector_push(cmd->arguments, NULL);
   return cmd;
+}
+
+Command* Parse_pipe(Vector* cmds, Vector* tokens, uint32_t* tokPos) {
+  Command* pipeCmd = Command_new();
+  pipeCmd->pipe[0] = Vector_pop(cmds);
+
+  /* Pipes have two components, command preceding it is first */
+  (*tokPos)++;
+  pipeCmd->pipe[1] = Parse_directive(tokens, tokPos);
+
+  return pipeCmd;
 }
 
 Vector* Parse_commands(char* str) {
@@ -88,12 +99,15 @@ Vector* Parse_commands(char* str) {
   uint32_t tokPos = 0;
   
   while (tokPos < Vector_size(tokens)) {
-    // Piping
+    /* Piping */
     if (!strcmp(Vector_getElem(tokens, tokPos), "|")) {
-
-    // Exectuables
+      Command* pipeCmd = Parse_pipe(commands, tokens, &tokPos);
+      pipeCmd->type = PIPE;
+      Vector_push(commands, pipeCmd);
+    /* Executable */
     } else {
       Command* exeCmd = Parse_directive(tokens, &tokPos);
+      exeCmd->type = EXECUTABLE;
       Vector_push(commands, exeCmd);
     }
 
