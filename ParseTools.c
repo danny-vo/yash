@@ -104,6 +104,21 @@ Vector* Parse_commands(char* str) {
       Command* pipeCmd = Parse_pipe(commands, tokens, &tokPos);
       pipeCmd->type = PIPE;
       Vector_push(commands, pipeCmd);
+    } else if (!strcmp(Vector_getElem(tokens, tokPos), "bg")) {
+      Command* bgCmd = Command_new();
+      bgCmd->type = BG_CMD;
+      Vector_push(commands, bgCmd);
+      tokPos++;
+    } else if (!strcmp(Vector_getElem(tokens, tokPos), "fg")) {
+      Command* fgCmd = Command_new();
+      fgCmd->type = FG_CMD;
+      Vector_push(commands, fgCmd);
+      tokPos++;
+    } else if (!strcmp(Vector_getElem(tokens, tokPos), "jobs")) {
+      Command* jobsCmd = Command_new();
+      jobsCmd->type = JOBS_CMD;
+      Vector_push(commands, jobsCmd);
+      tokPos++;
     /* Executable */
     } else {
       Command* exeCmd = Parse_directive(tokens, &tokPos);
