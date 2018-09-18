@@ -21,6 +21,7 @@ typedef enum CommandType {
 typedef struct Command {
   char* program;
   Vector* arguments;
+  char* argStr;
   int argLen;
   FileDescriptorTable fdTable;
   struct Command* pipe[2];
@@ -51,5 +52,6 @@ void Command_setProgram(Command* cmd, char* program);
 void Command_pushArg(Command* cmd, char* arg);
 void Command_print(Command cmd);
 char** Command_getArgs(Command* cmd);
+void Command_buildArgStr(Command* cmd, char* arg);
 
 #endif /* COMMAND_H */

@@ -33,17 +33,23 @@ void Parse_setRedirection(Vector* tokens, uint32_t* tokPos, Command* cmd) {
 
   /* Change stdin */
   if (!strcmp(token, "<")) {
+    Command_buildArgStr(cmd, token);
     char* file = Vector_getElem(tokens, ++(*tokPos));
+    Command_buildArgStr(cmd, file);
     cmd->fdTable.stdIn = malloc(sizeof(char)*strlen(file));
     strcpy(cmd->fdTable.stdIn, file);
   /* Change stdout */
   } else if (!strcmp(token, ">")) {
+    Command_buildArgStr(cmd, token);
     char* file = Vector_getElem(tokens, ++(*tokPos));
+    Command_buildArgStr(cmd, file);
     cmd->fdTable.stdOut = malloc(sizeof(char)*strlen(file));
     strcpy(cmd->fdTable.stdOut, file);
   /* Change stderr */
   } else if (!strcmp(token, "2>")){
+    Command_buildArgStr(cmd, token);
     char* file = Vector_getElem(tokens, ++(*tokPos));
+    Command_buildArgStr(cmd, file);
     cmd->fdTable.stdErr = malloc(sizeof(char)*strlen(file));
     strcpy(cmd->fdTable.stdErr, file);
   }
@@ -63,6 +69,7 @@ Command* Parse_directive(Vector* tokens, uint32_t* tokPos) {
     if (0 == tokenCount) {
       Command_setProgram(cmd, token);
       Command_pushArg(cmd, token);
+      Command_buildArgStr(cmd, token);
     /* Argument list */
     } else {
       /* Handle redirection */
@@ -70,6 +77,7 @@ Command* Parse_directive(Vector* tokens, uint32_t* tokPos) {
         Parse_setRedirection(tokens, tokPos, cmd);
       } else {
         Command_pushArg(cmd, token);
+        Command_buildArgStr(cmd, token);
       }
     }
     
@@ -89,6 +97,9 @@ Command* Parse_pipe(Vector* cmds, Vector* tokens, uint32_t* tokPos) {
   /* Pipes have two components, command preceding it is first */
   (*tokPos)++;
   pipeCmd->pipe[1] = Parse_directive(tokens, tokPos);
+  Command_buildArgStr(pipeCmd, pipeCmd->pipe[0]->argStr);
+  Command_buildArgStr(pipeCmd, "|");
+  Command_buildArgStr(pipeCmd, pipeCmd->pipe[1]->argStr);
 
   return pipeCmd;
 }

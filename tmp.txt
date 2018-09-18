@@ -1,0 +1,20 @@
+total 228
+drwxr-xr-x  3 vod users  4096 Sep 18 13:07 .
+drwx------ 29 vod users  4096 Sep  7 09:41 ..
+-rw-r--r--  1 vod users  1843 Sep 18 13:02 Command.c
+-rw-r--r--  1 vod users  1210 Sep 18 12:58 Command.h
+-rw-r--r--  1 vod users  9800 Sep 18 13:06 Command.o
+drwxr-xr-x  8 vod users  4096 Sep 18 11:09 .git
+-rw-r--r--  1 vod users   444 Aug 31 12:02 .gitignore
+-rw-r--r--  1 vod users   133 Sep 18 12:10 Job.h
+-rw-r--r--  1 vod users   400 Sep 15 16:52 makefile
+-rw-r--r--  1 vod users  3987 Sep 18 13:05 ParseTools.c
+-rw-r--r--  1 vod users   190 Sep 16 19:20 ParseTools.h
+-rw-r--r--  1 vod users 12872 Sep 18 13:06 ParseTools.o
+-rw-r--r--  1 vod users     0 Sep 18 13:07 tmp.txt
+-rw-r--r--  1 vod users  1602 Sep 17 20:01 Vector.c
+-rw-r--r--  1 vod users   616 Sep 17 20:01 Vector.h
+-rw-r--r--  1 vod users  8064 Sep 18 13:06 Vector.o
+-rwxr-xr-x  1 vod users 44624 Sep 18 13:06 yash
+-rw-r--r--  1 vod users  5271 Sep 18 12:57 yash.c
+-rw-r--r--  1 vod users 22256 Sep 18 13:06 yash.o

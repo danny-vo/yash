@@ -11,6 +11,7 @@ Command* Command_new(void) {
   cmd->program = NULL;
   cmd->arguments = (Vector*)malloc(sizeof(Vector));
   cmd->arguments = Vector_new(2, NULL, NULL);
+  cmd->argStr = (char*)calloc(1, sizeof(char));
   cmd->argLen = 0;
   return cmd;
 }
@@ -29,6 +30,7 @@ void Command_destroy(Command* cmd) {
   }
   destroyFdTable(&(cmd->fdTable));
   Vector_destroy(cmd->arguments);
+  free(cmd->argStr);
   free(cmd);
 }
 
@@ -49,6 +51,15 @@ void Command_pushArg(Command* cmd, char* arg) {
 
 char** Command_getArgs(Command* cmd) {
   return (char**)cmd->arguments->data;
+}
+
+void Command_buildArgStr(Command* cmd, char* arg) {
+  char* newStr = calloc(strlen(cmd->argStr) + strlen(arg) + 2, sizeof(char));
+  strcpy(newStr, cmd->argStr);
+  if (strlen(cmd->argStr)) strcat(newStr, " ");
+  strcat(newStr, arg);
+  cmd->argStr = newStr;
+  return;
 }
 
 void Command_print(Command cmd) {

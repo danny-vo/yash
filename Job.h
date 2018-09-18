@@ -1,6 +1,7 @@
 typedef enum JobState {
   BG,
   FG,
+  FINISHED,
   NONE,
   SUS
 } STATE;
@@ -8,4 +9,10 @@ typedef enum JobState {
 typedef struct Job {
   pid_t pid;
   STATE state;
+  char* process;
 } Job;
+
+Job Job_new(pid_t pid, STATE state, char* process);
+void Job_destroy(Job* job);
+void Job_set(Job* job, pid_t pid, STATE state, char* process);
+void Job_reset(Job* job);
