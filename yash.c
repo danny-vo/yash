@@ -13,22 +13,42 @@
 #include "Command.h"
 #include "Job.h"
 #include "ParseTools.h"
-#include "SignalHandlers.h"
 
 #define MAX_JOBS 20
 
 typedef struct YashJobs {
   Job bgTasks[MAX_JOBS];
+  uint32_t bgCtr;
+
+  Job susTask[MAX_JOBS];
+  uint32_t susCtr;
+
   Job currentTask;
 } YashJobs;
 
 /** Globals :( */
 pid_t yashPid;
 YashJobs yashJobs = {
-  {},
+  {}, 0, {}, 0,
   { 0, NONE }
 };
   
+/*-------------------- Signal Handlers -------------------*/
+void sigintHandler(int sigNum) {
+  printf("SIGINT signal %d received\n", sigNum);
+  printf("Current task pid: %d\n", yashJobs.currentTask.pid);
+  kill(yashJobs.currentTask.pid, SIGINT);
+}
+
+void sigtstpHandler(int sigNum) {
+  printf("SIGTSTP signal %d received\n", sigNum);
+  printf("Current task pid: %d\n", yashJobs.currentTask.pid);
+  kill(yashJobs.currentTask.pid, SIGTSTP);
+}
+
+void sigchldHandler(int sigNum) {
+  printf("SIGCHLD signal %d received\n", sigNum);
+}
 void Yash_redirect(Command* cmd) {
   /* Redirect stdin */
   if (cmd->fdTable.stdIn) {
@@ -120,7 +140,7 @@ int Yash_forkPipes(Command* cmd) {
 
 int main(int argc, char* argv[]) {
   /* Assign signal handlers */
-  //signal(SIGINT, sigintHandler);
+  signal(SIGINT, sigintHandler);
   signal(SIGTSTP, sigtstpHandler);
   signal(SIGCHLD, sigchldHandler);
 

@@ -12,7 +12,10 @@ typedef struct FileDescriptorTable {
 typedef enum CommandType {
   UNDEFINED,
   EXECUTABLE,
-  PIPE
+  PIPE,
+  BG_CMD,
+  FG_CMD,
+  JOBS_CMD
 } TYPE;
 
 typedef struct Command {
