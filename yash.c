@@ -102,7 +102,6 @@ void fgHandler() {
   printf("Sending SIGCONT to pid: %d\n", yashJobs.fgTask.pid);
   yashJobs.fgTask.state = FG;
   kill(yashJobs.fgTask.pid, SIGCONT);
-  //waitpid(yashJobs.fgTask.pid, NULL, WUNTRACED | WCONTINUED);
   wait((int*) NULL);
   yashJobs.fgTask.state = NONE;
 }
@@ -170,17 +169,23 @@ int Yash_forkPipes(Command* cmd) {
   int pipeFd[2];
   pipe(pipeFd);
 
+  /* First child */
   pid_t pid0 = fork();
   if (0 == pid0) {
-    setsid();
+    setpgid(0,0);
     close(pipeFd[0]);
     dup2(pipeFd[1], STDOUT_FILENO);
     Yash_redirect(cmd->pipe[0]);
     execvp(cmd->pipe[0]->program, Command_getArgs(cmd->pipe[0]));
   } else if (pid0 < 0) {
     perror("fork() error\n");
+  /* Parent process assigns stuff */
+  } else {
+    yashJobs.fgTask.pid = pid0;
+    yashJobs.fgTask.state = FG;
   }
-  
+ 
+  /* Second child */
   pid_t pid1 = fork();
   if (0 == pid1) {
     setpgid(0, pid0);
@@ -192,12 +197,11 @@ int Yash_forkPipes(Command* cmd) {
     perror("fork() error\n");
   }
 
+  /* Cleanup pipes */
   close(pipeFd[0]);
   close(pipeFd[1]);
-  yashJobs.fgTask.pid = pid0;
-  yashJobs.fgTask.state = FG;
-  waitpid(pid0, NULL, 0);
-  waitpid(pid1, NULL, 0);
+  waitpid(pid0, NULL, WUNTRACED|WCONTINUED);
+  waitpid(pid1, NULL, WUNTRACED|WCONTINUED);
   return 0;
 }
 
