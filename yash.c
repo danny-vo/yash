@@ -11,9 +11,24 @@
 #include <unistd.h>
 
 #include "Command.h"
+#include "Job.h"
 #include "ParseTools.h"
 #include "SignalHandlers.h"
 
+#define MAX_JOBS 20
+
+typedef struct YashJobs {
+  Job bgTasks[MAX_JOBS];
+  Job currentTask;
+} YashJobs;
+
+/** Globals :( */
+pid_t yashPid;
+YashJobs yashJobs = {
+  {},
+  { 0, NONE }
+};
+  
 void Yash_redirect(Command* cmd) {
   /* Redirect stdin */
   if (cmd->fdTable.stdIn) {
@@ -54,19 +69,22 @@ void Yash_redirect(Command* cmd) {
 void Yash_executeCommand(Command* cmd) {
   pid_t pid = fork();
 
-  // Child executes the program
+  /* Child executes the program */
   if (0 == pid) {
     Yash_redirect(cmd);
     execvp(cmd->program, Command_getArgs(cmd));
-  // Error
+  /* Error */
   } else if (-1 == pid) {
     perror("fork() error\n");
-  // Blocking until child finishes
+  /* Blocking until child finishes */
   } else {
-    wait((int*) NULL);
+    yashJobs.currentTask.pid = pid;
+    yashJobs.currentTask.state = FG;
+    printf("Current task pid: %d\n", yashJobs.currentTask.pid);
   }
-
+  
   close(pid);
+  waitpid(pid, NULL, 0);
 }
 
 int Yash_forkPipes(Command* cmd) {
@@ -105,7 +123,7 @@ int main(int argc, char* argv[]) {
   //signal(SIGINT, sigintHandler);
   signal(SIGTSTP, sigtstpHandler);
   signal(SIGCHLD, sigchldHandler);
-  
+
   char* inString;
   while (inString = readline("# ")) {
     Vector* commands = Parse_commands(inString);
@@ -125,5 +143,4 @@ int main(int argc, char* argv[]) {
   }
 
   return 0;
-
 }
