@@ -35,20 +35,30 @@ YashJobs yashJobs = {
 
 /*-------------------- Global modifier functions --------------------*/
 void pushBgTask(Job job) {
+  if (yashJobs.bgCtr >= MAX_JOBS) { return; }
   yashJobs.bgTasks[yashJobs.bgCtr++] = job;
   return;
 }
 
 Job popBgTask(void) {
+  if (yashJobs.bgCtr <= 0) { 
+    Job noJob = { 0, NONE };
+    return noJob;
+  }
   return yashJobs.bgTasks[--yashJobs.bgCtr];
 }
 
 void pushSusTask(Job job) {
+  if (yashJobs.susCtr >= MAX_JOBS) { return; }
   yashJobs.susTasks[yashJobs.susCtr++] = job;
   return;
 }
 
 Job popSusTask(void) {
+  if (yashJobs.susCtr <= 0) { 
+    Job noJob = { 0, NONE };
+    return noJob;
+  }
   return yashJobs.susTasks[--yashJobs.susCtr];
 }
 
