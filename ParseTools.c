@@ -75,6 +75,10 @@ Command* Parse_directive(Vector* tokens, uint32_t* tokPos) {
       /* Handle redirection */
       if(!(strcmp(token, "<")) || !strcmp(token, ">") || !strcmp(token, "2>")) {
         Parse_setRedirection(tokens, tokPos, cmd);
+      
+      } else if (!strcmp(token, "&")) {
+        Command_buildArgStr(cmd, token);
+        cmd->isBgTask = 1;
       } else {
         Command_pushArg(cmd, token);
         Command_buildArgStr(cmd, token);
@@ -100,6 +104,7 @@ Command* Parse_pipe(Vector* cmds, Vector* tokens, uint32_t* tokPos) {
   Command_buildArgStr(pipeCmd, pipeCmd->pipe[0]->argStr);
   Command_buildArgStr(pipeCmd, "|");
   Command_buildArgStr(pipeCmd, pipeCmd->pipe[1]->argStr);
+  pipeCmd->isBgTask = pipeCmd->pipe[1]->isBgTask;
 
   return pipeCmd;
 }

@@ -13,6 +13,7 @@ Command* Command_new(void) {
   cmd->arguments = Vector_new(2, NULL, NULL);
   cmd->argStr = (char*)calloc(1, sizeof(char));
   cmd->argLen = 0;
+  cmd->isBgTask = 0;
   return cmd;
 }
 

@@ -26,6 +26,7 @@ typedef struct Command {
   FileDescriptorTable fdTable;
   struct Command* pipe[2];
   TYPE type;
+  int isBgTask;
 } Command;
 
 /*

@@ -61,14 +61,18 @@ void setFgTask(pid_t pid, char* process) {
 
 /*-------------------- Signal Handlers -------------------*/
 void sigintHandler(int sigNum) {
-  printf("Current task pid: %d\n", yashJobs.fgTask.pid);
   if (FG == yashJobs.fgTask.state) {
     kill(yashJobs.fgTask.pid, SIGINT);
     yashJobs.fgTask.state = NONE;
   }
+  printf("Current task pid: %d\n", yashJobs.fgTask.pid);
 }
 
 void sigtstpHandler(int sigNum) {
+  if (NONE == yashJobs.fgTask.state) {
+    printf("No task to suspend\n");
+    return;
+  }
   Job_set(
     pushSusTask(),
     yashJobs.fgTask.pid,
@@ -76,6 +80,10 @@ void sigtstpHandler(int sigNum) {
     yashJobs.fgTask.process
   );
   kill(yashJobs.fgTask.pid, SIGTSTP);
+  printf(
+    "[%d]+\tStopped\t\t\t%s\n",
+    yashJobs.jobCnt, yashJobs.fgTask.process
+  );
   Job_reset(&yashJobs.fgTask);
 }
 
@@ -86,8 +94,11 @@ void sigchldHandler(int sigNum) {
 /*-------------------- Keyword command handlers -------------------*/
 void sendToFg() {
   Job* susTask = popSusTask();
+  if (!susTask) {
+    printf("No suspended tasks\n");
+    return;
+  }
   Job_set(&yashJobs.fgTask, susTask->pid, FG, susTask->process);
-  printf("%s\n", susTask->process);
   Job_reset(susTask);
   printf("Sending SIGCONT to %s, pid: %d\n", yashJobs.fgTask.process, yashJobs.fgTask.pid);
   kill(yashJobs.fgTask.pid, SIGCONT);
@@ -95,7 +106,20 @@ void sendToFg() {
   Job_destroy(&yashJobs.fgTask);
 }
 
-void bgHandler() {
+void sendToBg() {
+  Job* susTask = popSusTask();
+  if (!susTask) {
+    printf("No suspended tasks\n");
+    return;
+  }
+  Job* bgTask = pushBgTask();
+  Job_set(bgTask, susTask->pid, BG, susTask->process);
+  Job_reset(susTask);
+  kill(bgTask->pid, SIGCONT);
+  return;
+}
+
+void listJobs() {
 
 }
 
@@ -149,10 +173,15 @@ void Yash_executeCommand(Command* cmd) {
     perror("fork() error\n");
   /* Blocking until child finishes */
   } else {
-    Job_set(&yashJobs.fgTask, pid, FG, cmd->argStr);
-    printf("Program: %s, pid: %d\n", yashJobs.fgTask.process, yashJobs.fgTask.pid);
-    waitpid(-1, NULL, WUNTRACED | WCONTINUED);
-    Job_reset(&yashJobs.fgTask);
+    yashJobs.jobCnt+=1;
+    if (!cmd->isBgTask) {
+      Job_set(&yashJobs.fgTask, pid, FG, cmd->argStr);
+      printf("Program: %s, pid: %d\n", yashJobs.fgTask.process, yashJobs.fgTask.pid);
+      waitpid(-1, NULL, WUNTRACED | WCONTINUED);
+      Job_reset(&yashJobs.fgTask);
+    } else {
+      Job_set(pushBgTask(), pid, BG, cmd->argStr);
+    }
   }
   
 }
@@ -173,7 +202,12 @@ int Yash_forkPipes(Command* cmd) {
     perror("fork() error\n");
   /* Parent process assigns stuff */
   } else {
-    Job_set(&yashJobs.fgTask, pid0, FG, cmd->argStr);
+    yashJobs.jobCnt+=1;
+    if (!cmd->isBgTask) {
+      Job_set(&yashJobs.fgTask, pid0, FG, cmd->argStr);
+    } else {
+      Job_set(pushBgTask(), pid0, BG, cmd->argStr);
+    }
   }
  
   /* Second child */
@@ -191,9 +225,11 @@ int Yash_forkPipes(Command* cmd) {
   /* Cleanup pipes */
   close(pipeFd[0]);
   close(pipeFd[1]);
-  waitpid(pid0, NULL, WUNTRACED|WCONTINUED);
-  waitpid(pid1, NULL, WUNTRACED|WCONTINUED);
-  Job_reset(&yashJobs.fgTask);
+  if (!cmd->isBgTask) {
+    waitpid(pid0, NULL, WUNTRACED|WCONTINUED);
+    waitpid(pid1, NULL, WUNTRACED|WCONTINUED);
+    Job_reset(&yashJobs.fgTask);
+  }
   return 0;
 }
 
@@ -201,8 +237,9 @@ int main(int argc, char* argv[]) {
   /* Assign signal handlers */
   signal(SIGINT, sigintHandler);
   signal(SIGTSTP, sigtstpHandler);
-  //signal(SIGCHLD, sigchldHandler);
+  signal(SIGCHLD, sigchldHandler);
 
+  Job_reset(&yashJobs.fgTask);
   char* inString;
   while (inString = readline("# ")) {
     Vector* commands = Parse_commands(inString);
@@ -211,23 +248,19 @@ int main(int argc, char* argv[]) {
       Command* cmd = Vector_pop(commands);
 
       if (PIPE == cmd->type) {
-        printf("argStr: %s\n", cmd->argStr);
         Yash_forkPipes(cmd);
       } else if (BG_CMD == cmd->type) {
-      
+        sendToBg();
       } else if (FG_CMD == cmd->type) {
         sendToFg();
-      } else if (JOBS_CMD == cmd-> type) {
-
+      } else if (JOBS_CMD == cmd->type) {
+        listJobs();
       } else {
         Yash_executeCommand(cmd);
-        printf("argStr: %s\n", cmd->argStr);
       }
       Command_destroy(cmd);
     }
 
     Vector_destroy(commands);
   }
-
-  return 0;
 }
