@@ -1,7 +1,7 @@
 typedef enum JobState {
   BG,
+  DONE,
   FG,
-  FINISHED,
   NONE,
   SUS
 } STATE;

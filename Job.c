@@ -21,6 +21,7 @@ void Job_destroy(Job* job) {
 void Job_set(Job* job, pid_t pid, STATE state, char* process) {
   job->pid = pid;
   job->state = state;
+  if (!job->process) free(job->process);
   char* str = malloc((sizeof(char) * strlen(process)) + 1);
   strcpy(str, process);
   job->process = str;

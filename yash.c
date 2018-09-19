@@ -15,15 +15,13 @@
 #include "ParseTools.h"
 
 #define MAX_JOBS 20
+#define DEBUG_MODE 1
 
 typedef struct YashJobs {
-  Job bgTasks[MAX_JOBS];
-  uint32_t bgCtr;
-
   Job susTasks[MAX_JOBS];
   uint32_t susCtr;
 
-  Job allTask[MAX_JOBS];
+  Job allTasks[MAX_JOBS];
   uint32_t taskCtr;
 
   Job fgTask;
@@ -33,18 +31,19 @@ typedef struct YashJobs {
 
 /** Globals :( */
 pid_t yashPid;
+pid_t chldPid;
 YashJobs yashJobs = {
   {}, 0, {}, 0,
   { 0, NONE }, 0
 };
 
 /*-------------------- Global modifier functions --------------------*/
-Job* pushBgTask(void) {
-  return yashJobs.bgCtr >= MAX_JOBS ? NULL : &(yashJobs.bgTasks[yashJobs.bgCtr++]);
+Job* pushTask(void) {
+  return yashJobs.taskCtr >= MAX_JOBS ? NULL : &(yashJobs.allTasks[yashJobs.taskCtr++]);
 }
 
-Job* popBgTask(void) {
-  return yashJobs.bgCtr <= 0 ? NULL : &(yashJobs.bgTasks[--yashJobs.bgCtr]);
+Job* popTask(void) {
+  return yashJobs.taskCtr <= 0 ? NULL : &(yashJobs.allTasks[--yashJobs.taskCtr]);
 }
 
 Job* pushSusTask(void) {
@@ -59,13 +58,23 @@ void setFgTask(pid_t pid, char* process) {
   yashJobs.fgTask = Job_new(pid, FG, process);
 }
 
+void setJobDone(pid_t pid) {
+  for (int i=0; i<MAX_JOBS; ++i) {
+    if (pid == yashJobs.allTasks[i].pid) {
+      yashJobs.allTasks[i].state = DONE;
+    }
+  }
+}
+
 /*-------------------- Signal Handlers -------------------*/
 void sigintHandler(int sigNum) {
   if (FG == yashJobs.fgTask.state) {
     kill(yashJobs.fgTask.pid, SIGINT);
     yashJobs.fgTask.state = NONE;
   }
+#if DEBUG_MODE
   printf("Current task pid: %d\n", yashJobs.fgTask.pid);
+#endif
 }
 
 void sigtstpHandler(int sigNum) {
@@ -79,16 +88,24 @@ void sigtstpHandler(int sigNum) {
     SUS,
     yashJobs.fgTask.process
   );
+#if DEBUG_MODE
+  printf("Sending STGTSTP to pid: %d\n", yashJobs.fgTask.pid);
+#endif
   kill(yashJobs.fgTask.pid, SIGTSTP);
+#if DEBUG_MODE
   printf(
     "[%d]+\tStopped\t\t\t%s\n",
     yashJobs.jobCnt, yashJobs.fgTask.process
   );
-  Job_reset(&yashJobs.fgTask);
+#endif
+  Job_destroy(&yashJobs.fgTask);
 }
 
 void sigchldHandler(int sigNum) {
-  printf("SIGCHLD signal %d received\n", sigNum);
+#if DEBUG_MODE
+  printf("SIGCHLD signal %d received for pid: %d\n", sigNum, chldPid);
+  printf("%d\n", getpid());
+#endif
 }
 
 /*-------------------- Keyword command handlers -------------------*/
@@ -99,8 +116,10 @@ void sendToFg() {
     return;
   }
   Job_set(&yashJobs.fgTask, susTask->pid, FG, susTask->process);
-  Job_reset(susTask);
+  Job_destroy(susTask);
+#if DEBUG_MODE
   printf("Sending SIGCONT to %s, pid: %d\n", yashJobs.fgTask.process, yashJobs.fgTask.pid);
+#endif
   kill(yashJobs.fgTask.pid, SIGCONT);
   wait((int*) NULL);
   Job_destroy(&yashJobs.fgTask);
@@ -112,7 +131,7 @@ void sendToBg() {
     printf("No suspended tasks\n");
     return;
   }
-  Job* bgTask = pushBgTask();
+  Job* bgTask = pushTask();
   Job_set(bgTask, susTask->pid, BG, susTask->process);
   Job_reset(susTask);
   kill(bgTask->pid, SIGCONT);
@@ -163,6 +182,9 @@ void Yash_redirect(Command* cmd) {
 
 void Yash_executeCommand(Command* cmd) {
   pid_t pid = fork();
+#if DEBUG_MODE
+  printf("executeCommand for pid: %d\n", pid);
+#endif
 
   /* Child executes the program */
   if (0 == pid) {
@@ -170,17 +192,24 @@ void Yash_executeCommand(Command* cmd) {
     execvp(cmd->program, Command_getArgs(cmd));
   /* Error */
   } else if (-1 == pid) {
-    perror("fork() error\n");
+    perror("fork error\n");
   /* Blocking until child finishes */
   } else {
     yashJobs.jobCnt+=1;
     if (!cmd->isBgTask) {
       Job_set(&yashJobs.fgTask, pid, FG, cmd->argStr);
+#if DEBUG_MODE
       printf("Program: %s, pid: %d\n", yashJobs.fgTask.process, yashJobs.fgTask.pid);
-      waitpid(-1, NULL, WUNTRACED | WCONTINUED);
+#endif
+      chldPid = pid;
+      waitpid(pid, NULL, WUNTRACED | WCONTINUED);
       Job_reset(&yashJobs.fgTask);
     } else {
-      Job_set(pushBgTask(), pid, BG, cmd->argStr);
+#if DEBUG_MODE
+      printf("BG Program: %s, pid: %d\n", cmd->argStr, pid);
+#endif
+      Job_set(pushTask(), pid, BG, cmd->argStr);
+      waitpid(pid, NULL, WNOHANG);
     }
   }
   
@@ -192,6 +221,7 @@ int Yash_forkPipes(Command* cmd) {
 
   /* First child */
   pid_t pid0 = fork();
+  chldPid = pid0;
   if (0 == pid0) {
     setpgid(0,0);
     close(pipeFd[0]);
@@ -199,14 +229,14 @@ int Yash_forkPipes(Command* cmd) {
     Yash_redirect(cmd->pipe[0]);
     execvp(cmd->pipe[0]->program, Command_getArgs(cmd->pipe[0]));
   } else if (pid0 < 0) {
-    perror("fork() error\n");
+    perror("fork error\n");
   /* Parent process assigns stuff */
   } else {
     yashJobs.jobCnt+=1;
     if (!cmd->isBgTask) {
       Job_set(&yashJobs.fgTask, pid0, FG, cmd->argStr);
     } else {
-      Job_set(pushBgTask(), pid0, BG, cmd->argStr);
+      Job_set(pushTask(), pid0, BG, cmd->argStr);
     }
   }
  
@@ -219,7 +249,7 @@ int Yash_forkPipes(Command* cmd) {
     Yash_redirect(cmd->pipe[1]);
     execvp(cmd->pipe[1]->program, Command_getArgs(cmd->pipe[1]));
   } else if (pid1 < 0) {
-    perror("fork() error\n");
+    perror("fork error\n");
   }
 
   /* Cleanup pipes */
@@ -229,6 +259,9 @@ int Yash_forkPipes(Command* cmd) {
     waitpid(pid0, NULL, WUNTRACED|WCONTINUED);
     waitpid(pid1, NULL, WUNTRACED|WCONTINUED);
     Job_reset(&yashJobs.fgTask);
+  } else {
+    waitpid(pid0, NULL, WNOHANG);
+    waitpid(pid1, NULL, WNOHANG);
   }
   return 0;
 }
@@ -238,6 +271,9 @@ int main(int argc, char* argv[]) {
   signal(SIGINT, sigintHandler);
   signal(SIGTSTP, sigtstpHandler);
   signal(SIGCHLD, sigchldHandler);
+
+  yashPid = getpid();
+  printf("yash pid: %d\n", yashPid);
 
   Job_reset(&yashJobs.fgTask);
   char* inString;
