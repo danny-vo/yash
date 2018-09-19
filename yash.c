@@ -65,7 +65,6 @@ void sigintHandler(int sigNum) {
     kill(yashJobs.fgTask.pid, SIGINT);
     yashJobs.fgTask.state = NONE;
   }
-  printf("Current task pid: %d\n", yashJobs.fgTask.pid);
 }
 
 void sigtstpHandler(int sigNum) {
@@ -80,15 +79,10 @@ void sigtstpHandler(int sigNum) {
     yashJobs.fgTask.process
   );
   kill(yashJobs.fgTask.pid, SIGTSTP);
-  printf(
-    "[%d]+\tStopped\t\t\t%s\n",
-    yashJobs.jobCnt, yashJobs.fgTask.process
-  );
   Job_reset(&yashJobs.fgTask);
 }
 
 void sigchldHandler(int sigNum) {
-  printf("SIGCHLD signal %d received\n", sigNum);
 }
 
 /*-------------------- Keyword command handlers -------------------*/
@@ -100,7 +94,6 @@ void sendToFg() {
   }
   Job_set(&yashJobs.fgTask, susTask->pid, FG, susTask->process);
   Job_reset(susTask);
-  printf("Sending SIGCONT to %s, pid: %d\n", yashJobs.fgTask.process, yashJobs.fgTask.pid);
   kill(yashJobs.fgTask.pid, SIGCONT);
   wait((int*) NULL);
   Job_destroy(&yashJobs.fgTask);
@@ -176,7 +169,6 @@ void Yash_executeCommand(Command* cmd) {
     yashJobs.jobCnt+=1;
     if (!cmd->isBgTask) {
       Job_set(&yashJobs.fgTask, pid, FG, cmd->argStr);
-      printf("Program: %s, pid: %d\n", yashJobs.fgTask.process, yashJobs.fgTask.pid);
       waitpid(-1, NULL, WUNTRACED | WCONTINUED);
       Job_reset(&yashJobs.fgTask);
     } else {
